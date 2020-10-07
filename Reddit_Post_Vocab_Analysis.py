@@ -5,6 +5,7 @@ from xlutils.copy import copy
 from xlwt import Workbook
 from datetime import datetime
 
+#REDDIT SETUP SECTION
 #Access Reddit API
 reddit = praw.Reddit(client_id='14 Char Info', 
                      client_secret='24 Char Info', 
@@ -16,6 +17,8 @@ subLimit = 10
 askRedditTopPosts = askReddit.hot(limit=subLimit)
 #Gets the position (in the context of sheet placement) of newly collected posts
 redditRank = 1
+
+#EXCEL WORKBOOK SECTION
 #Opens and reads previously manually created excel file in the form of two sheets
 rb = xlrd.open_workbook('fileExcel.xls',formatting_info=True)
 readSheet = rb.sheet_by_index(0)
@@ -24,6 +27,15 @@ readSheet1 = rb.sheet_by_index(1)
 wb = copy(rb)
 writeSheet = wb.get_sheet(0)
 writeSheet1 = wb.get_sheet(1)
+writeSheet2 = wb.get_sheet(2)
+#FONT SECTION
+#different font styles used
+styleBold = xlwt.easyxf('font: bold 1, color black;')
+styleHigh = xlwt.easyxf('font: bold 1, color red;')
+styleLow = xlwt.easyxf('font: bold 1, color blue;')
+styleBasic = xlwt.easyxf('font: bold off, color black;')
+
+#MISC SECTION
 #removeChar chars that should not be read as part of the input of words
 removeChar = ".!,'’‘?"""
 #Gets the current date
@@ -35,11 +47,7 @@ wordList = []
 wordCount = []
 #List of prevously recorded submissions
 submissionList = []
-#different font styles used
-styleBold = xlwt.easyxf('font: bold 1, color black;')
-styleHigh = xlwt.easyxf('font: bold 1, color red;')
-styleLow = xlwt.easyxf('font: bold 1, color blue;')
-styleBasic = xlwt.easyxf('font: bold off, color black;')
+
 #if workbook is empty, add these as first row titles of columns
 if(readSheet.nrows <= 0):
     writeSheet.write(0,0, "WORD LIST",styleBold)
@@ -54,11 +62,13 @@ if(readSheet.nrows <= 0):
     writeSheet1.write(0,8,"# Of Plat Awards",styleBold)
     writeSheet1.write(0,9,"# Of Gold Awards",styleBold)
     writeSheet1.write(0,10,"# Of Silver Awards",styleBold)
+    
 #Save and reopen the workbook and update the readSheets
 wb.save('fileExcel.xls') 
 rb = xlrd.open_workbook('fileExcel.xls')
 readSheet = rb.sheet_by_index(0)
 readSheet1 = rb.sheet_by_index(1)
+
 #startCol is the next blank column where currDate and new instances of words can be added
 startCol = readSheet.ncols
 #If the word list in excel has words in it (word list doesnt include the WORD LIST title at 0,0), add it to the python list and append the curr day's count to 0 until proven otherwise
@@ -75,12 +85,18 @@ if readSheet1.nrows > 0:
 for j,submission in enumerate(askRedditTopPosts):
     if (submission.stickied == True):
         subLimit += 1
-askRedditTopPosts = askReddit.hot(limit=subLimit)        
+askRedditTopPosts = askReddit.hot(limit=subLimit)
+
+#MAIN LOOP
 #Go through the current top reddit posts
 for j,submission in enumerate(askRedditTopPosts):
     #If the curr sub's ID is not in the list of previously recorded submissions
     if(submission.id not in submissionList and submission.stickied == False):
         print(str(redditRank)+ " " + submission.title +"\n")
+        #Add sub ID to sub ID list
+        submissionList.append(submission.id)
+
+        #READ SUBMISSION TITLE AND COUNT INDIVIDUAL WORDS IN WORDLIST
         #Create a string variable of sub's title and remove unwanted chars 
         editedTitle = submission.title
         for character in removeChar:
@@ -97,8 +113,8 @@ for j,submission in enumerate(askRedditTopPosts):
             if word not in wordList:
                 wordList.append(word)
                 wordCount.append(1)
-        #Add sub ID to sub ID list
-        submissionList.append(submission.id)
+
+        #WRITE SUBMISSION INFO TO SHEET
         #Write current date on next blank row
         writeSheet1.write(readSheet1.nrows,0,currDate,styleBold)
         #Writes relevant data to second sheet about each submission and increment the rank
@@ -132,8 +148,11 @@ for j,submission in enumerate(askRedditTopPosts):
         writeSheet1.write(readSheet1.nrows+redditRank,8,numPlat)
         writeSheet1.write(readSheet1.nrows+redditRank,9,numGold)
         writeSheet1.write(readSheet1.nrows+redditRank,10,numSilver)
+        
         #iterates redditRank by +1
         redditRank += 1
+
+#WRITE WORD LIST AND CURR WORD COUNT TO SHEET
 #Writes the current date and time of when submissions were received on wordSheet's first row above the current word count list        
 writeSheet.write(0, startCol, currDate+" # of instances of word on this date and time",styleBold)
 #Rewrites the word list into cells and writes current day's word count to the next blank row
@@ -145,106 +164,57 @@ wb.save('fileExcel.xls')
 rb = xlrd.open_workbook('fileExcel.xls',formatting_info=True)
 readSheet = rb.sheet_by_index(0)
 readSheet1 = rb.sheet_by_index(1)
+readSheet2 = rb.sheet_by_index(2)
 #If an empty cell exists in the word count sheet, make it a zero
 for i in range(readSheet.nrows):
     for j in range(readSheet.ncols):
         if(readSheet.cell_value(i,j) == ''):
             writeSheet.write(i,j,0)
-low = 100
-high = 0
-low2 = 1000000
-high2 = 0
-low3 = 1000000
-high3 = 0
-lowGold = 1000000
-highGold = 1
-lowSil = 1000000
-highSil = 1
-lowPlat = 1000000
-highPlat = 1
+
+#EDITS TEXT COLOR AND FORMAT OF HIGHEST AND LOWEST NUMBERS OF SUBMISSION INFO
 #Go through the different columns to find the highest and lowest numbers in each
-for i in range(readSheet1.nrows):
-    if(i != 0):
-        if(readSheet1.cell_value(i,5) != ''):
-           if(readSheet1.cell_value(i,5) < low):
-               low = readSheet1.cell_value(i,5)
-           if(readSheet1.cell_value(i,5) > high):
-               high = readSheet1.cell_value(i,5)
-        if(readSheet1.cell_value(i,4) != ''):
-           if(readSheet1.cell_value(i,4) < low2):
-               low2 = readSheet1.cell_value(i,4)
-           if(readSheet1.cell_value(i,4) > high2):
-               high2 = readSheet1.cell_value(i,4)   
-        if(readSheet1.cell_value(i,3) != ''):
-           if(readSheet1.cell_value(i,3) < low3):
-               low3 = readSheet1.cell_value(i,3) 
-           if(readSheet1.cell_value(i,3) > high3):
-               high3 = readSheet1.cell_value(i,3)
-        if(readSheet1.cell_value(i,9) != ''):
-           if(readSheet1.cell_value(i,9) < lowGold):
-               lowGold = readSheet1.cell_value(i,9) 
-           if(readSheet1.cell_value(i,9) > highGold):
-               highGold = readSheet1.cell_value(i,9)   
-        if(readSheet1.cell_value(i,10) != ''):
-           if(readSheet1.cell_value(i,10) < lowSil):
-               lowSil = readSheet1.cell_value(i,10) 
-           if(readSheet1.cell_value(i,10) > highSil):
-               highSil = readSheet1.cell_value(i,10)
-        if(readSheet1.cell_value(i,8) != ''):
-           if(readSheet1.cell_value(i,8) < lowPlat):
-               lowSil = readSheet1.cell_value(i,8) 
-           if(readSheet1.cell_value(i,8) > highPlat):
-               highSil = readSheet1.cell_value(i,8)
-#Per column, if number is highest (or bool is True), bold and make red.
-#If number is lowest (or bool is False), bold and make blue
-#Else, just make it regular font.        
-for i in range(readSheet1.nrows):
-    if(i != 0):
-        if(readSheet1.cell_value(i,6) == 0):
-            writeSheet1.write(i,6,bool(readSheet1.cell_value(i,6)),styleLow)
-        elif(readSheet1.cell_value(i,6) == 1):
-            writeSheet1.write(i,6,bool(readSheet1.cell_value(i,6)),styleHigh)
-            
-        if(readSheet1.cell_value(i,5) == low):
-            writeSheet1.write(i,5,low,styleLow)
-        elif(readSheet1.cell_value(i,5) == high):
-            writeSheet1.write(i,5,high,styleHigh)
-        else:
-            writeSheet1.write(i,5,readSheet1.cell_value(i,5),styleBasic)
-            
-        if(readSheet1.cell_value(i,4) == high2):
-            writeSheet1.write(i,4,high2,styleHigh)
-        elif(readSheet1.cell_value(i,4) == low2):
-            writeSheet1.write(i,4,low2,styleLow)
-        else:
-            writeSheet1.write(i,4,readSheet1.cell_value(i,4),styleBasic)
-            
-        if(readSheet1.cell_value(i,3) == high3):
-            writeSheet1.write(i,3,high3,styleHigh)
-        elif(readSheet1.cell_value(i,3) == low3):
-            writeSheet1.write(i,3,low3,styleLow)
-        else:
-            writeSheet1.write(i,3,readSheet1.cell_value(i,3),styleBasic)
-
-        if(readSheet1.cell_value(i,8) == highPlat):
-            writeSheet1.write(i,8,highPlat,styleHigh)
-        elif(readSheet1.cell_value(i,8) == lowPlat):
-            writeSheet1.write(i,8,lowPlat,styleLow)
-        else:
-            writeSheet1.write(i,8,readSheet1.cell_value(i,8),styleBasic)
-            
-        if(readSheet1.cell_value(i,9) == highGold):
-            writeSheet1.write(i,9,highGold,styleHigh)
-        elif(readSheet1.cell_value(i,9) == lowGold):
-            writeSheet1.write(i,9,lowGold,styleLow)
-        else:
-            writeSheet1.write(i,9,readSheet1.cell_value(i,9),styleBasic)
-            
-        if(readSheet1.cell_value(i,10) == highSil):
-            writeSheet1.write(i,10,highSil,styleHigh)
-        elif(readSheet1.cell_value(i,10) == lowSil):
-            writeSheet1.write(i,10,lowSil,styleLow)
-        else:
-            writeSheet1.write(i,10,readSheet1.cell_value(i,10),styleBasic)
-
+for i in range(readSheet1.ncols):
+    low = 1000000
+    high = 0
+    for j in range(readSheet1.nrows):
+        if(j != 0 and i > 2 and i != 6 and i != 7 and readSheet1.cell_value(j,i) != ''):
+            if(readSheet1.cell_value(j,i) < low):
+                low = readSheet1.cell_value(j,i)
+            if(readSheet1.cell_value(j,i) > high):
+                high = readSheet1.cell_value(j,i)
+    #Per column, if number is highest (or bool is True), bold and make red.
+    #If number is lowest (or bool is False), bold and make blue
+    #Else, just make it regular font.   
+    for j in range(readSheet1.nrows):
+        if(j != 0 and i > 2 and i != 6 and i != 7 and readSheet1.cell_value(j,i) != ''):
+            if(readSheet1.cell_value(j,i) == low):
+                writeSheet1.write(j,i,low,styleLow)
+            elif(readSheet1.cell_value(j,i) == high):
+                writeSheet1.write(j,i,high,styleHigh)
+            else:
+                writeSheet1.write(j,i,readSheet1.cell_value(j,i),styleBasic)
+        elif (j != 0 and  (i == 6 or i == 7) and readSheet1.cell_value(j,i) != ''):
+            if(readSheet1.cell_value(j,i) == 0):
+                writeSheet1.write(j,i,bool(readSheet1.cell_value(j,i)),styleLow)
+            elif(readSheet1.cell_value(i,6) == 1):
+                writeSheet1.write(j,i,bool(readSheet1.cell_value(j,i)),styleHigh)
+data = []
+cols2 = 0
+#Fill in 2d list. Each element contains all info on post
+for j in range(readSheet1.nrows):
+    elem = []
+    if(j != 0 and readSheet1.cell_value(j,2) != '' ):
+        elem =[readSheet1.cell_value(j,i)for i in range(readSheet1.ncols)]
+        data.append(elem)
+#Goes though each column from sheet1 and sorts questions from highest to lowest
+for i in range(11):
+    if(i > 2 and i != 6 and i != 7):
+        data = sorted(data,key=lambda l:l[i],reverse=True)
+        writeSheet2.write(0,cols2,readSheet1.cell_value(0,1),styleBold)
+        writeSheet2.write(0,cols2+1,readSheet1.cell_value(0,i),styleBold)
+        for j in range(len(data)):
+            writeSheet2.write(1+j,cols2,data[j][1])
+            writeSheet2.write(1+j,cols2+1,data[j][i])
+        cols2 += 3
+    
 wb.save('fileExcel.xls') 
