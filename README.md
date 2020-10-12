@@ -5,12 +5,23 @@ The goal of this project is to use Python 3 and the PRAW library to find the top
 During this time, the words used in each post will be counted in order to determine the most commonly used words and phrases.
 The number of comments, upvotes, upvote ratio, if the submission is marked as NSFW or 'Serious', and awards earned (among possible other attributes) will also be tracked for each submission.
 
+# CURRENT FEATURES:
+
+Tracks the number of times a word appears and displays the total number and number per program execution in columns.
+
+Stores each question and its attributes, including the number of comments, upvotes, upvote ratio, if the submission is marked as NSFW or 'Serious', and awards (Platinum, Gold, and Silver) earned.
+
+Updates information about currently stored question (ex: see if upvotes or awards have increased since the last time the question was looked at), and marks what about the question was updated.
+
+Ignores pinned posts
+
+Analyzes and dedicated sheet displays the different attributes (and their questions) in order from greatest to least.
+
+Analyzes and dedicated sheet displays the different word count column in order from greatest to least.
 
 # TO DO: 
 
 Format columns so they are the length of longest string
-
-Add ability to update information about currently stored question (ex: see if upvotes or awards have increased since the last time the question was looked at).
 
 Add data analysis of author data (ex: who posts the most, what questions do they post, how many total upvotes do they have).
 
