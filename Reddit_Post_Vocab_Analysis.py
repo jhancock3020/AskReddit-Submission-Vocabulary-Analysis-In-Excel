@@ -12,7 +12,7 @@ reddit = praw.Reddit(client_id='14 Char Info',
                      user_agent='Project Name')
 #The subreddit object that will be analyzed
 askReddit = reddit.subreddit('askreddit')
-subLimit = 5
+subLimit = 35
 #Gets the top posts from the subreddit
 askRedditTopPosts = askReddit.hot(limit=subLimit)
 #Gets the position (in the context of sheet placement) of newly collected posts
@@ -29,6 +29,7 @@ writeSheet = wb.get_sheet(0)
 writeSheet1 = wb.get_sheet(1)
 writeSheet2 = wb.get_sheet(2)
 writeSheet3 = wb.get_sheet(3)
+writeSheet4 = wb.get_sheet(4)
 #FONT SECTION
 #different font styles used
 styleBold = xlwt.easyxf('font: bold 1, color black;')
@@ -38,7 +39,7 @@ styleBasic = xlwt.easyxf('font: bold off, color black;')
 
 #MISC SECTION
 #removeChar chars that should not be read as part of the input of words
-removeChar = ".!,'’‘?"""
+removeChar = ".!,'’‘?""-"
 #Gets the current date
 today = datetime.now()
 currDate = today.strftime("%d/%m/%Y %I:%M:%S %p")
@@ -203,6 +204,8 @@ for j,submission in enumerate(askRedditTopPosts):
                     writeSheet1.write(i,11,updateInfo)
 
 #WRITE WORD LIST AND CURR WORD COUNT TO SHEET
+if all([ v != 0 for v in wordCount ]) :
+    print('indeed they are')
 #Writes the current date and time of when submissions were received on wordSheet's first row above the current word count list        
 writeSheet.write(0, startCol, currDate,styleBold)
 #Rewrites the word list into cells and writes current day's word count to the next blank row
@@ -245,6 +248,7 @@ readSheet = rb.sheet_by_index(0)
 readSheet1 = rb.sheet_by_index(1)
 readSheet2 = rb.sheet_by_index(2)
 readSheet3 = rb.sheet_by_index(3)
+
 #EDITS TEXT COLOR AND FORMAT OF HIGHEST AND LOWEST NUMBERS OF SUBMISSION INFO
 #Go through the different columns to find the highest and lowest numbers in each
 for i in range(readSheet1.ncols):
@@ -306,5 +310,64 @@ for j in range(readSheet.ncols):
             writeSheet3.write(1+i,cols1,data[i][0])
             writeSheet3.write(1+i,cols1+1,data[i][j])
         cols1 += 3
-
+        
+#Save and reopen the workbook and update the readSheets
+wb.save('fileExcel.xls') 
+rb = xlrd.open_workbook('fileExcel.xls',formatting_info=True)
+readSheet = rb.sheet_by_index(0)
+readSheet1 = rb.sheet_by_index(1)
+readSheet2 = rb.sheet_by_index(2)
+readSheet3 = rb.sheet_by_index(3)
+readSheet4 = rb.sheet_by_index(4)
+#Arrays to hold newly made word list, question list, and comments/upvotes of those questions
+wordData = []
+questionData = []
+comments = []
+points = []
+#Keeps track of where to write word and its questions in overall sheet
+keepTackPos = 1
+#Read word list from total most used word to least used word and add it to a word list
+for j in range(readSheet3.nrows):
+    if(j > 0):
+        wordData.append(readSheet3.cell_value(j,0))
+#Go through question data
+for j in range(readSheet1.nrows):
+    if(j > 0 and readSheet1.cell_value(j,1)!= ''):
+        #clean up question words by getting rid of unwanted chars
+        #and make it all lowercase to make mathcing easy
+        sentence = readSheet1.cell_value(j,1).lower()
+        for character in removeChar:
+            sentence = sentence.replace(character,"")
+        #add question, its upvotes, and its comments to their own lists.
+        questionData.append(sentence)
+        comments.append(readSheet1.cell_value(j,3))
+        points.append(readSheet1.cell_value(j,4))
+writeSheet4.write(0,0,"Words and Questions",styleBold)
+writeSheet4.write(0,1,"Upvotes",styleBold)
+writeSheet4.write(0,2,"Comments",styleBold)
+#Go through all words in wordlist
+for j in range(len(wordData)):
+    #Write word from list
+    writeSheet4.write(keepTackPos,0,wordData[j],styleBold)
+    #Create variables for each word's respective total comments and upvotes
+    currPoint = 0
+    currComments = 0
+    #Keep track of row where word is located, so total comments and upvotes can be recorded
+    wordTitlePos = keepTackPos
+    #Go through all the questions
+    for i in range(len(questionData)):
+        #If the current word is in the question
+        if(wordData[j] in questionData[i]):
+            #Write question, its upvotesd, and its comments
+            keepTackPos += 1
+            writeSheet4.write(keepTackPos,0,questionData[i])
+            writeSheet4.write(keepTackPos,1,points[i])
+            writeSheet4.write(keepTackPos,2,comments[i])
+            currPoint += points[i]
+            currComments += comments[i]
+    #Write the total upvotes and comments next to word
+    writeSheet4.write(wordTitlePos,1,currPoint,styleBold)
+    writeSheet4.write(wordTitlePos,2,currComments,styleBold)
+    keepTackPos += 1
+        
 wb.save('fileExcel.xls') 
