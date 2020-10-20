@@ -19,10 +19,11 @@ Analyzes and dedicated sheet displays the different attributes (and their questi
 
 Analyzes and dedicated sheet displays the different word count column in order from greatest to least.
 
+Analyzes the word data. If the word is "dog", then lists all questions containing that word and the number of upvotes and comments each question recieved. Also displays the total number of upvotes and comments all questions containing that word combined had.
+
+
 # TO DO: 
 
 Format columns so they are the length of longest string
 
 Add data analysis of author data (ex: who posts the most, what questions do they post, how many total upvotes do they have).
-
-Add analysis of word data (ex: if the most popular word is "dog", then find and list all questions containing that word and the number of upvotes each question recieved).
